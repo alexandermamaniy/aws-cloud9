@@ -49,7 +49,6 @@ def list_objects(bucket_name):
     """
     s3_client = boto3.client('s3')
   
-    # first delete all the objects from a bucket, if any objects exist
     response = s3_client.list_objects_v2(Bucket=bucket_name)
     if response['KeyCount'] != 0:
         for content in response['Contents']:
@@ -130,7 +129,7 @@ def activate_versioning(bucket_name):
     bucket_versioning.enable()
     print(bucket_versioning.status)
 
-def download_file(bucket_name, object_key, filename="./test.png"):
+def download_file(bucket_name, object_key, filename):
     """
     Bucket (str) – The name of the bucket to download from.
     Key (str) – The name of the key to download from.
@@ -147,6 +146,8 @@ def main():
     parser.add_argument('bucket_name', help='The name of the bucket.')
     parser.add_argument('--file_name', help='The name of the file to upload.')
     parser.add_argument('--object_key', help='The object key')
+    parser.add_argument('--path_download_file', help='Path where the downloaded file will be saved')
+    
 
     region = 'us-west-2'
   
@@ -156,7 +157,7 @@ def main():
     # list_buckets()
     # upload_file(args.file_name,args.bucket_name, args.object_key)
     # list_objects(args.bucket_name)
-    # download_file(args.bucket_name, args.object_key)
+    download_file(args.bucket_name, args.object_key, args.path_download_file)
     # activate_versioning(args.bucket_name)
     
     # delete_object(region, args.bucket_name, args.object_key)
