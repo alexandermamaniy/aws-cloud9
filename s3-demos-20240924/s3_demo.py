@@ -97,6 +97,14 @@ def delete_object(region, bucket_name, object_key):
 def delete_bucket(region, bucket_name):
     """Delete a given S3 bucket
     """
+  
+    s3_resource = boto3.resource('s3')
+    bucket_versioning = s3_resource.BucketVersioning(bucket_name)
+    
+    if bucket_versioning.status == "Suspended" or bucket_versioning.status == "Enabled":
+        bucket = s3_resource.Bucket(bucket_name)
+        bucket.object_versions.delete()
+    
     s3_client = boto3.client('s3')
   
     # first delete all the objects from a bucket, if any objects exist
@@ -152,7 +160,7 @@ def main():
     # activate_versioning(args.bucket_name)
     
     # delete_object(region, args.bucket_name, args.object_key)
-    # delete_bucket(region, args.bucket_name)
+    delete_bucket(region, args.bucket_name)
  
  
 
