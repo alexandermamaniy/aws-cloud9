@@ -79,7 +79,7 @@ def delete_object(region, bucket_name, object_key):
     """
     s3_client = boto3.client('s3')
     response = s3_client.delete_object(Bucket=bucket_name, Key=object_key)
-    
+    print(response)    
 
 
 def delete_bucket(region, bucket_name):
@@ -112,12 +112,13 @@ def main():
 
     region = 'us-west-2'
   
+  
     args = parser.parse_args()
-    create_bucket(args.bucket_name, region)
-    # list_buckets()
-    upload_file(args.file_name,args.bucket_name, args.object_key)
+    # create_bucket(args.bucket_name, region)
+    list_buckets()
+    # upload_file(args.file_name,args.bucket_name, args.object_key)
     # delete_object(region, args.bucket_name, args.object_key)
-    # delete_bucket(region, args.bucket_name)
+    delete_bucket(region, args.bucket_name)
  
  
 
