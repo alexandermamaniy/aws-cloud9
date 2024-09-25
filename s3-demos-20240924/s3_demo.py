@@ -43,7 +43,19 @@ def list_buckets():
     for bucket in response['Buckets']:
         print('\t', bucket["Name"])
     
-    
+
+def list_objects(bucket_name):
+    """List objects a given S3 bucket
+    """
+    s3_client = boto3.client('s3')
+  
+    # first delete all the objects from a bucket, if any objects exist
+    response = s3_client.list_objects_v2(Bucket=bucket_name)
+    if response['KeyCount'] != 0:
+        for content in response['Contents']:
+            print('\t', content['Key'])
+            
+
 def upload_file(file_name, bucket, object_key=None):
     """Upload a file to an S3 bucket
 
@@ -99,9 +111,27 @@ def delete_bucket(region, bucket_name):
     # delete the bucket
     print('\t Deleting bucket...', bucket_name)
     response = s3_client.delete_bucket(Bucket=bucket_name)
-  
- 
- 
+    
+
+def activate_versioning(bucket_name):
+    """
+    bucket_name (string) – The BucketVersioning’s bucket_name identifier. This must be set.
+    """
+    s3 = boto3.resource('s3')
+    bucket_versioning = s3.BucketVersioning(bucket_name)
+    bucket_versioning.enable()
+    print(bucket_versioning.status)
+
+def download_file(bucket_name, object_key, filename="./test.png"):
+    """
+    Bucket (str) – The name of the bucket to download from.
+    Key (str) – The name of the key to download from.
+    Filename (str) – The path to the file to download to.
+    """
+    s3 = boto3.client('s3')
+    # s3.download_file('mybucket', 'hello.txt', '/tmp/hello.txt')
+    s3.download_file(Bucket=bucket_name, Key=object_key, Filename=filename)
+    
 
 def main():
     import argparse
@@ -115,10 +145,14 @@ def main():
   
     args = parser.parse_args()
     # create_bucket(args.bucket_name, region)
-    list_buckets()
+    # list_buckets()
     # upload_file(args.file_name,args.bucket_name, args.object_key)
+    # list_objects(args.bucket_name)
+    # download_file(args.bucket_name, args.object_key)
+    # activate_versioning(args.bucket_name)
+    
     # delete_object(region, args.bucket_name, args.object_key)
-    delete_bucket(region, args.bucket_name)
+    # delete_bucket(region, args.bucket_name)
  
  
 
