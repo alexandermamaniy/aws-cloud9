@@ -1,31 +1,33 @@
 import logging
 import boto3
 from botocore.exceptions import ClientError
-from aws_bucket import AWSBucketCreateException
-from S3.Client.exceptions import BucketAlreadyExist, BucketAlreadyOwnedByYou
+from bucket_exceptions import AWSBucketCreateException 
 
 class AWSBucket:
 
     def __init__(self, bucket_name, region):
         self._bucket_name = bucket_name
+        if region is None:
+            region="us-west-2"
+            
         self._region = region
         self._s3_resource = boto3.resource('s3')
+        self._s3_client = boto3.client('s3', region_name=region)
         
+        
+    def create_bucket(self):
         try:
-            if self._region is None:
-                self._s3_client = boto3.client('s3')
-                self.s3_client.create_bucket(Bucket=bucket_name)
-            else:
-                self._s3_client = boto3.client('s3', region_name=region)
-                location = {'LocationConstraint': region}
-                self._s3_client.create_bucket(Bucket=self._bucket_name, CreateBucketConfiguration=location)
-        except  (BucketAlreadyExist, BucketAlreadyOwnedByYou) as e:
-            raise AWSBucketCreateException(e.response.Message, e.response.Code)
+            location = {'LocationConstraint': self._region}
+            self._s3_client.create_bucket(Bucket=self._bucket_name, CreateBucketConfiguration=location)
+        except ClientError as e:
+            print(e)
+            raise AWSBucketCreateException(e["Error"]["Message"], e["Error"]["Code"])
+    
     
     def list_objects(self):
         """List objects a given S3 bucket
         """
-        response = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        response = self._s3_client.list_objects_v2(Bucket=self.bucket_name)
         if response['KeyCount'] != 0:
             for content in response['Contents']:
                 print('\t', content['Key'])
@@ -46,7 +48,7 @@ class AWSBucket:
 
         # Upload the file
         try:
-            response = self.s3_client.upload_file(file_name, self.bucket, object_key, extraArgs)
+            response = self._s3_client.upload_file(file_name, self._bucket_name, object_key, extraArgs)
             '''
             # an example of using the ExtraArgs optional parameter to set the ACL (access control list) value 'public-read' to the S3 object
             response = s3_client.upload_file(file_name, bucket, key, 
@@ -65,6 +67,13 @@ class AWSBucket:
         bucket_versioning = self._s3_resource.BucketVersioning(self.bucket_name)
         bucket_versioning.enable()
 
+    def desactivate_versioning(self):
+        """
+        bucket_name (string) – The BucketVersioning’s bucket_name identifier. This must be set.
+        """
+        bucket_versioning = self._s3_resource.BucketVersioning(self.bucket_name)
+        bucket_versioning.suspend()
+
 
     def download_file(self, object_key, filename):
         """
@@ -77,41 +86,33 @@ class AWSBucket:
         self._s3_client.download_file(Bucket=self.bucket_name, Key=object_key, Filename=filename)
         
 
-    @staticmethod
-    def create_bucket(bucket_name:str, region:str=None) -> 'AWSBucket':
-        """Create an S3 bucket in a specified region
-        If a region is not specified, the bucket is created by default in the region (us-west-2).
-        :return: AWSBucket if bucket created, else AWSBucketCreateException
-        """
-        return AWSBucket()
-    
-    @staticmethod
-    def delete_bucket(awsBucket:'AWSBucket') -> None:
+
+    def delete_bucket(self) -> None:
         s3_resource = boto3.resource('s3')
-        bucket_versioning = s3_resource.BucketVersioning(awsBucket.bucket_name)
+        bucket_versioning = s3_resource.BucketVersioning(self._bucket_name)
         
         if bucket_versioning.status == "Suspended" or bucket_versioning.status == "Enabled":
-            bucket = s3_resource.Bucket(awsBucket.bucket_name)
+            bucket = s3_resource.Bucket(self._bucket_name)
             bucket.object_versions.delete()
         
         s3_client = boto3.client('s3')
     
         # first delete all the objects from a bucket, if any objects exist
-        response = s3_client.list_objects_v2(Bucket=awsBucket.bucket_name)
+        response = s3_client.list_objects_v2(Bucket=self._bucket_name)
         if response['KeyCount'] != 0:
             for content in response['Contents']:
                 object_key = content['Key']
                 print('\t Deleting object...', object_key)
-                s3_client.delete_object(Bucket=awsBucket.bucket_name, Key=object_key)
+                s3_client.delete_object(Bucket=self._bucket_name, Key=object_key)
         # delete the bucket
-        print('\t Deleting bucket...', awsBucket.bucket_name)
-        response = s3_client.delete_bucket(Bucket=awsBucket.bucket_name)
+        print('\t Deleting bucket...', self._bucket_name)
+        response = s3_client.delete_bucket(Bucket=self._bucket_name)
 
     
     def delete_object(self, object_key) -> None:
         """Delete a given object from an S3 bucket
         """
-        response = self.s3_client.delete_object(Bucket=self.bucket_name, Key=object_key)
+        response = self._s3_client.delete_object(Bucket=self._bucket_name, Key=object_key)
         print(response)    
 
     @staticmethod
@@ -141,80 +142,3 @@ class AWSBucket:
     def region(self, new_region):
         self._region = new_region
     
-
-    
-
-
-    
-
-def list_objects(bucket_name):
-    """List objects a given S3 bucket
-    """
-    s3_client = boto3.client('s3')
-  
-    # first delete all the objects from a bucket, if any objects exist
-    response = s3_client.list_objects_v2(Bucket=bucket_name)
-    if response['KeyCount'] != 0:
-        for content in response['Contents']:
-            print('\t', content['Key'])
-            
-
-def upload_file(file_name, bucket, object_key=None):
-    """Upload a file to an S3 bucket
-
-    :param file_name: File to upload
-    :param bucket: Bucket to upload to
-    :param key: S3 object key. If not specified then file_name is used
-    :return: True if file was uploaded, else False
-    """
-
-    # If S3 key was not specified, use file_name
-    if object_key is None:
-        object_key = file_name
-
-    # Upload the file
-    s3_client = boto3.client('s3')
-    try:
-        response = s3_client.upload_file(file_name, bucket, object_key)
-        '''
-        # an example of using the ExtraArgs optional parameter to set the ACL (access control list) value 'public-read' to the S3 object
-        response = s3_client.upload_file(file_name, bucket, key, 
-            ExtraArgs={'ACL': 'public-read'})
-        '''
-        
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
-    
-    
-    
-def delete_object(region, bucket_name, object_key):
-    """Delete a given object from an S3 bucket
-    """
-    s3_client = boto3.client('s3')
-    response = s3_client.delete_object(Bucket=bucket_name, Key=object_key)
-    print(response)    
-
-
-
-def activate_versioning(bucket_name):
-    """
-    bucket_name (string) – The BucketVersioning’s bucket_name identifier. This must be set.
-    """
-    s3 = boto3.resource('s3')
-    bucket_versioning = s3.BucketVersioning(bucket_name)
-    bucket_versioning.enable()
-    print(bucket_versioning.status)
-
-def download_file(bucket_name, object_key, filename="./test.png"):
-    """
-    Bucket (str) – The name of the bucket to download from.
-    Key (str) – The name of the key to download from.
-    Filename (str) – The path to the file to download to.
-    """
-    s3 = boto3.client('s3')
-    # s3.download_file('mybucket', 'hello.txt', '/tmp/hello.txt')
-    s3.download_file(Bucket=bucket_name, Key=object_key, Filename=filename)
-    
-

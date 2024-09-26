@@ -12,34 +12,38 @@ def main():
    args = parser.parse_args()
    
 
+   aws_bucket_object = AWSBucket(args.bucket_name, args.region)
+   
+
    # AWSBucket's static methods
    # create bucket
-   aws_bucket_object = AWSBucket.create_bucket(args.bucket_name, args.region)
+   # aws_bucket_object.create_bucket()
    
    # list_buckets
-   AWSBucket.list_buckets()
+   # AWSBucket.list_buckets()
    
-   # Delete bucket
-   AWSBucket.delete_bucket(awsBucket=aws_bucket_object)
-   
+   # upload_file
+   # aws_bucket_object.upload_file(args.file_name, args.object_key)
    
    # AWSBucket's object methods
    # list_objects
-   aws_bucket_object.list_objects()
-
-   # upload_file
-   aws_bucket_object.upload_file(args.bucket_name, args.object_key)
+   # aws_bucket_object.list_objects()
    
    # download_file
-   aws_bucket_object.download_file(args.object_key, args.path_download_file)
+   # aws_bucket_object.download_file(args.object_key, args.path_download_file)
     
    # activate_versioning
-   aws_bucket_object.activate_versioning()
+   # aws_bucket_object.activate_versioning()
+
+   # desactivate_versioning
+   # aws_bucket_object.desactivate_versioning()
 
    # delete_object
-   aws_bucket_object.delete_object(args.object_key)
+   # aws_bucket_object.delete_object(args.object_key)
    
-
+   # Delete bucket
+   # aws_bucket_object.delete_bucket()
+   
 
 if __name__ == '__main__':
    main()
