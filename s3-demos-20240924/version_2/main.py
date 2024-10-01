@@ -14,13 +14,15 @@ def main():
 
    aws_bucket_object = AWSBucket(args.bucket_name, args.region)
    
-
-   # AWSBucket's static methods
+   # AWSBucket'
    # create bucket
    # aws_bucket_object.create_bucket()
    
+
    # list_buckets
    # AWSBucket.list_buckets()
+
+
    
    # upload_file
    # aws_bucket_object.upload_file(args.file_name, args.object_key)
@@ -42,7 +44,7 @@ def main():
    # aws_bucket_object.delete_object(args.object_key)
    
    # Delete bucket
-   # aws_bucket_object.delete_bucket()
+   aws_bucket_object.delete_bucket()
    
 
 if __name__ == '__main__':

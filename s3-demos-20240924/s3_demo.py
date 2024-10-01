@@ -153,12 +153,12 @@ def main():
   
   
     args = parser.parse_args()
-    create_bucket(args.bucket_name, region)
+    # create_bucket(args.bucket_name, region)
     # list_buckets()
     # upload_file(args.file_name,args.bucket_name, args.object_key)
     # list_objects(args.bucket_name)
     # download_file(args.bucket_name, args.object_key, args.path_download_file)
-    # activate_versioning(args.bucket_name)
+    activate_versioning(args.bucket_name)
     
     # delete_object(region, args.bucket_name, args.object_key)
     # delete_bucket(region, args.bucket_name)
